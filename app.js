@@ -331,14 +331,14 @@ app.post('/teacher/slots/:id/delete', checkAuthenticated, checkTeacher, (req, re
 // --- TEACHER BOOKING APPROVALS ---
 
 app.get('/teacher/bookings', checkAuthenticated, checkTeacher, (req, res) => {
-    const sql = \`
+    const sql = `
         SELECT b.*, ts.subject, ts.slot_date, ts.slot_time, s.full_name as student_name, s.email as student_email
         FROM bookings b
         JOIN teacher_slots ts ON b.slot_id = ts.slot_id
         JOIN students s ON b.student_id = s.student_id
         WHERE ts.teacher_id = ?
         ORDER BY b.created_at DESC
-    \`;
+    `;
     db.query(sql, [req.session.user.id], (error, bookings) => {
         if (error) {
             req.flash('error', 'Could not load bookings.');
@@ -377,14 +377,14 @@ app.post('/teacher/bookings/:id/status', checkAuthenticated, checkTeacher, (req,
 // --- STUDENT BOOKING ROUTES ---
 
 app.get('/student/slots', checkAuthenticated, checkStudent, (req, res) => {
-    const sql = \`
+    const sql = `
         SELECT ts.*, t.full_name as teacher_name,
                (SELECT status FROM bookings b WHERE b.slot_id = ts.slot_id AND b.student_id = ?) as my_status
         FROM teacher_slots ts
         JOIN teachers t ON ts.teacher_id = t.teacher_id
         WHERE ts.is_available = 1
         ORDER BY ts.slot_date, ts.slot_time
-    \`;
+    `;
     db.query(sql, [req.session.user.id], (error, slots) => {
         if (error) {
             req.flash('error', 'Could not load available slots.');
@@ -408,14 +408,14 @@ app.post('/student/slots/:id/book', checkAuthenticated, checkStudent, (req, res)
 });
 
 app.get('/student/my-bookings', checkAuthenticated, checkStudent, (req, res) => {
-    const sql = \`
+    const sql = `
         SELECT b.*, ts.subject, ts.location, ts.slot_date, ts.slot_time, t.full_name as teacher_name
         FROM bookings b
         JOIN teacher_slots ts ON b.slot_id = ts.slot_id
         JOIN teachers t ON ts.teacher_id = t.teacher_id
         WHERE b.student_id = ?
         ORDER BY b.created_at DESC
-    \`;
+    `;
     db.query(sql, [req.session.user.id], (error, bookings) => {
         if (error) {
             req.flash('error', 'Could not load your bookings.');
