@@ -20,22 +20,20 @@ const DASHBOARDS = {
     student: '/student'
 };
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
     ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
 });
 
-db.connect((error) => {
-    if (error) {
-        console.error('Database connection failed:', error.message);
-        return;
-    }
-    console.log('Connected to database:', process.env.DB_NAME);
+console.log('Database pool initialized for:', process.env.DB_NAME);
 
-    const tables = [
+const tables = [
         `CREATE TABLE IF NOT EXISTS admins (
             admin_id INT AUTO_INCREMENT PRIMARY KEY,
             full_name VARCHAR(100) NOT NULL,
@@ -109,7 +107,6 @@ db.connect((error) => {
         }
     }
     nextTable();
-});
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
