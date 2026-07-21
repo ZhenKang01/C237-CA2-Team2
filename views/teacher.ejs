@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Teacher Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <h1 class="mt-5">Teacher Dashboard</h1>
-        <p>Logged in as <strong><%= user.username %></strong> (Teacher)</p>
-        <!-- TODO: build out session-applying features here -->
-        <a href="/logout" class="btn btn-outline-secondary mt-3">Logout</a>
-    </div>
+<html lang='en'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Teacher dashboard - TutorLink</title><link rel='stylesheet' href='/css/app.css'></head>
+<body class='dashboard-page'>
+    <nav class='nav shell'><a class='brand' href='/'><span class='brand-mark'>T</span>TutorLink</a><div class='user-nav'><b class='role-pill teacher-pill'>Teacher</b><span><strong><%%= user.username %%></strong><small><%%= user.email %%></small></span><a class='button secondary' href='/logout'>Log out</a></div></nav>
+    <main class='dashboard shell'>
+        <%% if (errorMessages.length) { %%><div class='alert error'><%%= errorMessages.join(' ') %%></div><%% } %%>
+        <%% if (successMessages.length) { %%><div class='alert success'><%%= successMessages.join(' ') %%></div><%% } %%>
+        <header class='dashboard-header'><div><span class='eyebrow'>Teacher workspace</span><h1>Ready to make an impact, <%%= user.username.split(' ')[0] %%>?</h1><p>Your dedicated space for guiding students and organising teaching.</p></div><div class='profile-mark teacher-avatar'>TC</div></header>
+        <section class='welcome teacher-welcome'><h2>Help every learner find their next step.</h2><p>This protected dashboard is available only to accounts with the Teacher role.</p></section>
+        <section class='action-grid'>
+            <article><span>01</span><h3>Teaching opportunities</h3><p>Review sessions and apply where your expertise is the best fit.</p><a class='button secondary' href='/teacher/sessions' style='margin-top:1rem; display:inline-block; text-decoration:none;'>Browse Sessions</a></article>
+            <article><span>02</span><h3>My applications</h3><p>Keep upcoming sessions and commitments visible in one place.</p><a class='button secondary' href='/teacher/my-applications' style='margin-top:1rem; display:inline-block; text-decoration:none;'>My Applications</a></article>
+            <article><span>03</span><h3>Student support</h3><p>Maintain a clear view of the learners you guide.</p></article>
+        </section>
+    </main>
 </body>
 </html>

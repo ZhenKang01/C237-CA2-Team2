@@ -1,15 +1,24 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <h1 class="mt-5">Admin Dashboard</h1>
-        <p>Logged in as <strong><%= user.username %></strong> (Admin)</p>
-        <!-- TODO: build out session/user management here -->
-        <a href="/logout" class="btn btn-outline-secondary mt-3">Logout</a>
-    </div>
+<html lang='en'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Admin dashboard - TutorLink</title><link rel='stylesheet' href='/css/app.css'></head>
+<body class='dashboard-page'>
+    <nav class='nav shell'><a class='brand' href='/'><span class='brand-mark'>T</span>TutorLink</a><div class='user-nav'><b class='role-pill admin-pill'>Admin</b><span><strong><%%= user.username %%></strong><small><%%= user.email %%></small></span><a class='button secondary' href='/logout'>Log out</a></div></nav>
+    <main class='dashboard shell'>
+        <%% if (errorMessages.length) { %%><div class='alert error'><%%= errorMessages.join(' ') %%></div><%% } %%>
+        <%% if (successMessages.length) { %%><div class='alert success'><%%= successMessages.join(' ') %%></div><%% } %%>
+        <header class='dashboard-header'><div><span class='eyebrow'>Administration workspace</span><h1>Good to see you, <%%= user.username.split(' ')[0] %%>.</h1><p>Monitor the TutorLink community and keep each role organised.</p></div><div class='total'><small>Total users</small><strong><%%= users.length %%></strong></div></header>
+        <section class='stat-grid'>
+            <article><strong><%%= users.filter(item => item.role === 'admin').length %%></strong><small>Administrators</small></article>
+            <article><strong><%%= users.filter(item => item.role === 'teacher').length %%></strong><small>Teachers</small></article>
+            <article><strong><%%= users.filter(item => item.role === 'student').length %%></strong><small>Students</small></article>
+        </section>
+        <section class='panel'><header><h2>User directory</h2><p>Registered accounts and assigned roles.</p></header>
+            <%% if (loadError) { %%><div class='empty'><%%= loadError %%></div>
+            <%% } else if (!users.length) { %%><div class='empty'>No users are registered yet.</div>
+            <%% } else { %%><div class='table-wrap'><table><thead><tr><th>User</th><th>Contact</th><th>Address</th><th>Role</th></tr></thead><tbody>
+                <%% users.forEach(function(account) { %%><tr><td><b><%%= account.username %%></b><small><%%= account.email %%></small></td><td><%%= account.contact %%></td><td><%%= account.address %%></td><td><b class='role-pill <%%= account.role %%>-pill'><%%= account.role %%></b></td></tr><%% }); %%>
+            </tbody></table></div><%% } %%>
+        </section>
+    </main>
 </body>
 </html>

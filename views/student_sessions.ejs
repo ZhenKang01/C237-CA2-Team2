@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Browse Sessions - TutorLink Student</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel='stylesheet' href='/css/app.css'>
+</head>
+<body class='dashboard-page bg-light'>
+    <nav class='nav shell' style='display:flex; justify-content:space-between; align-items:center; padding: 1rem 2rem; background:white; border-bottom:1px solid #eaeaea;'>
+        <a class='brand' href='/' style='text-decoration:none; font-weight:bold; color:black;'><span class='brand-mark' style='background:black; color:white; padding:2px 6px; margin-right:5px; border-radius:4px;'>T</span>TutorLink</a>
+        <div class='user-nav' style='display:flex; gap:1rem; align-items:center;'>
+            <a href="/student" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+            <a href="/student/my-bookings" class="btn btn-outline-success btn-sm">My Bookings</a>
+            <b class='role-pill student-pill' style='background:#d1e7dd; color:#0f5132; padding:4px 8px; border-radius:12px; font-size:0.8rem;'>Student</b>
+            <span><strong><%= user.username %></strong></span>
+            <a class='btn btn-danger btn-sm' href='/logout'>Log out</a>
+        </div>
+    </nav>
+    <main class='dashboard shell container mt-4'>
+        <% if (errorMessages.length) { %><div class='alert alert-danger'><%= errorMessages.join(' ') %></div><% } %>
+        <% if (successMessages.length) { %><div class='alert alert-success'><%= successMessages.join(' ') %></div><% } %>
+        
+        <div class="mb-4">
+            <h2>Available Learning Sessions</h2>
+            <p class="text-muted">Find and book sessions to advance your learning journey.</p>
+        </div>
+
+        <div class="row">
+            <% if (sessions.length === 0) { %>
+                <div class="col-12"><div class="alert alert-info">No sessions available right now.</div></div>
+            <% } else { %>
+                <% sessions.forEach(function(session) { %>
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-header bg-success text-white py-3">
+                                <h5 class="card-title mb-0 fw-bold"><%= session.subject %></h5>
+                            </div>
+                            <div class="card-body bg-white">
+                                <h6 class="card-subtitle mb-3 text-muted">
+                                    <i class="bi bi-calendar"></i> <%= new Date(session.session_date).toLocaleDateString() %> at <%= session.session_time %>
+                                </h6>
+                                <p class="card-text mb-1"><strong>Location:</strong> <%= session.location %></p>
+                                <p class="card-text mb-3"><strong>Availability:</strong> <%= (session.capacity - session.booked_count) > 0 ? (session.capacity - session.booked_count) : 0 %> / <%= session.capacity %> spots left</p>
+                                
+                                <% if (session.my_status === 'booked') { %>
+                                    <div class="alert alert-success p-2 mb-0 text-center border-success">You're booked for this session!</div>
+                                <% } else if (session.booked_count >= session.capacity) { %>
+                                    <div class="alert alert-secondary p-2 mb-0 text-center">Fully Booked</div>
+                                <% } else { %>
+                                    <form action="/student/sessions/<%= session.session_id %>/apply" method="POST">
+                                        <button type="submit" class="btn btn-success w-100">Book Session</button>
+                                    </form>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } %>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Admin Sessions - TutorLink</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel='stylesheet' href='/css/app.css'>
+</head>
+<body class='dashboard-page'>
+    <nav class='nav shell' style='display:flex; justify-content:space-between; align-items:center; padding: 1rem 2rem; background:white; border-bottom:1px solid #eaeaea;'>
+        <a class='brand' href='/' style='text-decoration:none; font-weight:bold; color:black;'><span class='brand-mark' style='background:black; color:white; padding:2px 6px; margin-right:5px; border-radius:4px;'>T</span>TutorLink</a>
+        <div class='user-nav' style='display:flex; gap:1rem; align-items:center;'>
+            <a href="/admin" class="btn btn-outline-secondary btn-sm">Dashboard</a>
+            <b class='role-pill admin-pill' style='background:#f8d7da; color:#842029; padding:4px 8px; border-radius:12px; font-size:0.8rem;'>Admin</b>
+            <span><strong><%= user.username %></strong></span>
+            <a class='btn btn-danger btn-sm' href='/logout'>Log out</a>
+        </div>
+    </nav>
+    <main class='dashboard shell container mt-4'>
+        <% if (errorMessages.length) { %><div class='alert alert-danger'><%= errorMessages.join(' ') %></div><% } %>
+        <% if (successMessages.length) { %><div class='alert alert-success'><%= successMessages.join(' ') %></div><% } %>
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Manage Sessions</h2>
+            <a href="/admin/sessions/new" class="btn btn-primary">Create New Session</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Subject</th>
+                        <th>Location</th>
+                        <th>Date & Time</th>
+                        <th>Capacity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (sessions.length === 0) { %>
+                        <tr><td colspan="5" class="text-center text-muted py-4">No sessions found. Create one above!</td></tr>
+                    <% } else { %>
+                        <% sessions.forEach(function(session) { %>
+                            <tr>
+                                <td><strong><%= session.subject %></strong></td>
+                                <td><%= session.location %></td>
+                                <td>
+                                    <%= new Date(session.session_date).toLocaleDateString() %> <br>
+                                    <small class="text-muted"><%= session.session_time %></small>
+                                </td>
+                                <td><%= session.capacity %></td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="/admin/sessions/<%= session.session_id %>/edit" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        <form action="/admin/sessions/<%= session.session_id %>/delete" method="POST" onsubmit="return confirm('Are you sure you want to delete this session?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

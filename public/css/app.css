@@ -1,0 +1,67 @@
+:root {
+    --ink: #17231f;
+    --muted: #65716c;
+    --paper: #f7f8f3;
+    --white: #ffffff;
+    --line: #dfe5dc;
+    --green: #1f684f;
+    --green-dark: #124536;
+    --mint: #dff1e6;
+    --lime: #dceb83;
+    --blue: #dbe8ff;
+    --blue-ink: #315b9a;
+    --amber: #fff0c9;
+    --amber-ink: #8a6116;
+    --shadow: 0 24px 70px rgba(31, 66, 53, .11);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--paper); font-family: Arial, sans-serif; }
+a { color: inherit; }
+button, input { font: inherit; }
+.shell { width: min(1160px, calc(100% - 40px)); margin-inline: auto; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; text-decoration: none; }
+.brand-mark { display: inline-grid; width: 34px; height: 34px; place-items: center; border-radius: 11px 4px; color: white; background: var(--green); }
+.nav { display: flex; min-height: 84px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.nav-actions, .user-nav { display: flex; align-items: center; gap: 20px; }
+.nav-actions a { font-weight: 700; text-decoration: none; }
+.user-nav > span { display: grid; }
+.user-nav small { color: var(--muted); }
+.button { display: inline-flex; min-height: 43px; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 12px; padding: 0 19px; cursor: pointer; font-weight: 700; text-decoration: none; transition: .2s; }
+.button:hover { transform: translateY(-2px); }
+.primary { color: white; background: var(--green); }
+.primary:hover { background: var(--green-dark); }
+.secondary { border-color: var(--line); background: transparent; }
+.large { min-height: 52px; padding-inline: 24px; }
+.full { width: 100%; min-height: 50px; }
+.eyebrow { color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.hero { display: grid; min-height: 600px; grid-template-columns: 1.08fr .92fr; align-items: center; gap: 80px; padding-block: 70px 90px; }
+.hero h1, .auth-copy h1, .dashboard-header h1, .not-found h1 { margin: 14px 0 20px; font-size: clamp(44px, 6vw, 76px); line-height: 1.02; letter-spacing: -.055em; }
+.hero p { max-width: 650px; color: var(--muted); font-size: 19px; line-height: 1.7; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.hero-card { position: relative; min-height: 420px; border-radius: 42px 12px; padding: 50px 38px; background: var(--mint); box-shadow: var(--shadow); overflow: hidden; }
+.hero-card::before { position: absolute; width: 260px; height: 260px; right: -80px; top: -90px; border-radius: 50%; background: var(--lime); content: ''; }
+.mini-card { position: relative; display: flex; width: 86%; align-items: center; gap: 14px; border: 1px solid rgba(31,104,79,.1); border-radius: 16px; margin-bottom: 28px; padding: 16px; background: rgba(255,255,255,.9); box-shadow: 0 12px 30px rgba(31,66,53,.08); }
+.offset-card { margin-left: 14%; }
+.mini-card span, .profile-mark { display: grid; place-items: center; border-radius: 14px; font-size: 12px; font-weight: 800; }
+.mini-card span { min-width: 46px; height: 46px; }
+.mini-card b, .mini-card small { display: block; }
+.mini-card small { margin-top: 3px; color: var(--muted); }
+.student-avatar { color: var(--blue-ink); background: var(--blue); }
+.teacher-avatar { color: var(--green); background: var(--mint); }
+.admin-avatar { color: var(--amber-ink); background: var(--amber); }
+.roles-section { padding-block: 80px 110px; }
+.roles-section h2 { max-width: 680px; margin: 12px 0 38px; font-size: clamp(32px, 4vw, 50px); line-height: 1.12; letter-spacing: -.04em; }
+.role-grid, .action-grid, .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.role-grid article, .action-grid article, .stat-grid article, .panel { border: 1px solid var(--line); border-radius: 22px; background: var(--white); }
+.role-grid article, .action-grid article { padding: 28px; }
+.role-grid article > span, .action-grid article > span { color: #96a29d; font-size: 12px; font-weight: 700; }
+.role-grid h3, .action-grid h3 { margin: 34px 0 10px; font-size: 24px; }
+.role-grid p, .action-grid p { color: var(--muted); line-height: 1.6; }
+.role-pill { display: inline-flex; border-radius: 999px; padding: 7px 11px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.student-pill { color: var(--blue-ink); background: var(--blue); }
+.teacher-pill { color: var(--green); background: var(--mint); }
+.admin-pill { color: var(--amber-ink); background: var(--amber); }
+.footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-block: 28px; color: var(--muted); font-size: 14px; }
+
+/* MORE */
