@@ -141,10 +141,16 @@ app.get('/', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
+    if (req.session.user) {
+        return res.redirect(dashboardFor(req.session.user.role));
+    }
     res.render('register', { formData: req.flash('formData')[0] || {} });
 });
 
 app.post('/register', validateRegistration, (req, res) => {
+    if (req.session.user) {
+        return res.redirect(dashboardFor(req.session.user.role));
+    }
     const { username, email, password, address, contact, role } = req.body;
     const sql = [
         'INSERT INTO users (username, email, password, address, contact, role)',
