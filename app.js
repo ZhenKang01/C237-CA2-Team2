@@ -35,6 +35,48 @@ db.connect((error) => {
         return;
     }
     console.log('Connected to database');
+    
+    const createSessions = `CREATE TABLE IF NOT EXISTS sessions (
+        session_id INT AUTO_INCREMENT PRIMARY KEY,
+        created_by INT NOT NULL,
+        subject VARCHAR(100) NOT NULL,
+        location VARCHAR(150) NOT NULL,
+        session_date DATE NOT NULL,
+        session_time TIME NOT NULL,
+        capacity INT NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (created_by) REFERENCES users(id)
+    )`;
+    const createApplications = `CREATE TABLE IF NOT EXISTS teacher_applications (
+        application_id INT AUTO_INCREMENT PRIMARY KEY,
+        session_id INT NOT NULL,
+        teacher_id INT NOT NULL,
+        status ENUM('applied','approved','rejected','withdrawn') DEFAULT 'applied',
+        applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (session_id) REFERENCES sessions(session_id),
+        FOREIGN KEY (teacher_id) REFERENCES users(id)
+    )`;
+    const createBookings = `CREATE TABLE IF NOT EXISTS student_bookings (
+        booking_id INT AUTO_INCREMENT PRIMARY KEY,
+        session_id INT NOT NULL,
+        student_id INT NOT NULL,
+        status ENUM('booked','cancelled') DEFAULT 'booked',
+        booked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (session_id) REFERENCES sessions(session_id),
+        FOREIGN KEY (student_id) REFERENCES users(id)
+    )`;
+
+    db.query(createSessions, (err) => {
+        if (err) console.error('Error creating sessions table:', err.message);
+        else {
+            db.query(createApplications, (err) => {
+                if (err) console.error('Error creating teacher_applications table:', err.message);
+            });
+            db.query(createBookings, (err) => {
+                if (err) console.error('Error creating student_bookings table:', err.message);
+            });
+        }
+    });
 });
 
 app.use(express.urlencoded({ extended: false }));
@@ -71,11 +113,11 @@ function validateRegistration(req, res, next) {
     const password = req.body.password || '';
     const address = (req.body.address || '').trim();
     const contact = (req.body.contact || '').trim();
-    const role = (req.body.role || '').trim().toLowerCase();
+    const role = 'student'; // Force role to student
 
     req.body = { username, email, password, address, contact, role };
 
-    if (!username || !email || !password || !address || !contact || !role) {
+    if (!username || !email || !password || !address || !contact) {
         req.flash('error', 'All fields are required.');
         req.flash('formData', req.body);
         return res.redirect('/register');
@@ -90,11 +132,7 @@ function validateRegistration(req, res, next) {
         req.flash('formData', req.body);
         return res.redirect('/register');
     }
-    if (!REGISTRATION_ROLES.includes(role)) {
-        req.flash('error', 'Choose either Student or Teacher.');
-        req.flash('formData', req.body);
-        return res.redirect('/register');
-    }
+    
     return next();
 }
 

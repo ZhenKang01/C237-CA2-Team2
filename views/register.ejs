@@ -4,7 +4,7 @@
 <body class='auth-page'>
     <a class='brand auth-brand' href='/'><span class='brand-mark'>T</span>TutorLink</a>
     <main class='auth-layout'>
-        <section class='auth-copy'><span class='eyebrow'>Join the community</span><h1>Make learning feel more connected.</h1><p>Students and teachers can register here. Admin accounts are provisioned separately.</p></section>
+        <section class='auth-copy'><span class='eyebrow'>Join the community</span><h1>Make learning feel more connected.</h1><p>Students can register here. Teacher and Admin accounts are provisioned separately.</p></section>
         <section class='form-card'>
             <h2>Create your account</h2><p>Tell us a little about yourself.</p>
             <% if (errorMessages.length) { %><div class='alert error'><%= errorMessages.join(' ') %></div><% } %>
@@ -18,10 +18,7 @@
                     <label>Contact number<input type='tel' name='contact' value='<%= formData.contact || '' %>' required></label>
                 </div>
                 <label>Password<input type='password' name='password' minlength='6' placeholder='At least 6 characters' required></label>
-                <div class='role-choice'>
-                    <label><input type='radio' name='role' value='student' <%= formData.role === 'student' ? 'checked' : '' %> required><span><b>Student</b><small>I want to learn</small></span></label>
-                    <label><input type='radio' name='role' value='teacher' <%= formData.role === 'teacher' ? 'checked' : '' %> required><span><b>Teacher</b><small>I want to guide learners</small></span></label>
-                </div>
+                <input type='hidden' name='role' value='student'>
                 <button class='button primary full' type='submit'>Create account</button>
             </form>
             <p class='form-footer'>Already registered? <a href='/login'>Log in</a></p>
