@@ -86,7 +86,7 @@ const validateRegistration = (req, res, next) => {
 app.post('/register', validateRegistration, (req, res) => {
     const { username, email, password, phone_number, role } = req.body;
 
-    const sql = 'INSERT INTO users (username, email, password, phone_number, role) VALUES (?, ?, SHA1(?), ?, ?, ?)';
+    const sql = 'INSERT INTO users (username, email, password, phone_number, role) VALUES (?, ?, SHA1(?), ?, ?)';
     db.query(sql, [username, email, password, phone_number, role], (err, result) => {
         if (err) {
             console.error('Database error during registration:', err);
@@ -181,9 +181,14 @@ app.get('/logout', (req, res) => {
 
 // Starting the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server started on port ${PORT}`);
+    });
+}
+
+// Export for Vercel
+module.exports = app;
 
 // Routes
 // jen - Admin
