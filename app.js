@@ -88,7 +88,14 @@ app.post('/register', validateRegistration, (req, res) => {
     const sql = 'INSERT INTO users (username, email, password, address, contact, role) VALUES (?, ?, SHA1(?), ?, ?, ?)';
     db.query(sql, [username, email, password, address, contact, role], (err, result) => {
         if (err) {
-            throw err;
+            console.error('Database error during registration:', err);
+            if (err.code === 'ER_DUP_ENTRY') {
+                req.flash('error', 'An account with that email or username already exists.');
+            } else {
+                req.flash('error', 'An unexpected error occurred during registration. Please try again.');
+            }
+            req.flash('formData', req.body);
+            return res.redirect('/register');
         }
         req.flash('success', 'Registration successful! Please log in.');
         res.redirect('/login');
@@ -113,7 +120,9 @@ app.post('/login', (req, res) => {
     const sql = 'SELECT * FROM users WHERE email = ? AND password = SHA1(?)';
     db.query(sql, [email, password], (err, results) => {
         if (err) {
-            throw err;
+            console.error('Database error during login:', err);
+            req.flash('error', 'An unexpected database error occurred. Please try again later.');
+            return res.redirect('/login');
         }
 
         if (results.length > 0) {
