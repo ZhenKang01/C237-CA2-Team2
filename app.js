@@ -25,7 +25,8 @@ const db = mysql.createConnection({
 
 db.connect((err) => {
     if (err) {
-        throw err;
+        console.error('Failed to connect to database. Did you set the environment variables in Vercel?', err.message);
+        return;
     }
     console.log('Connected to database');
 });
@@ -56,9 +57,9 @@ app.get('/register', (req, res) => {
 });
 
 const validateRegistration = (req, res, next) => {
-    const { username, email, password, address, contact, role } = req.body;
+    const { username, email, password, phone_number, role } = req.body;
 
-    if (!username || !email || !password || !address || !contact || !role) {
+    if (!username || !email || !password || !phone_number || !role) {
         req.flash('error', 'All fields are required, including role.');
         req.flash('formData', req.body);
         return res.redirect('/register');
@@ -83,10 +84,10 @@ const validateRegistration = (req, res, next) => {
 };
 
 app.post('/register', validateRegistration, (req, res) => {
-    const { username, email, password, address, contact, role } = req.body;
+    const { username, email, password, phone_number, role } = req.body;
 
-    const sql = 'INSERT INTO users (username, email, password, address, contact, role) VALUES (?, ?, SHA1(?), ?, ?, ?)';
-    db.query(sql, [username, email, password, address, contact, role], (err, result) => {
+    const sql = 'INSERT INTO users (username, email, password, phone_number, role) VALUES (?, ?, SHA1(?), ?, ?, ?)';
+    db.query(sql, [username, email, password, phone_number, role], (err, result) => {
         if (err) {
             console.error('Database error during registration:', err);
             if (err.code === 'ER_DUP_ENTRY') {
