@@ -93,7 +93,9 @@ const tables = [
             FOREIGN KEY (requested_by_student_id) REFERENCES students(student_id) ON DELETE CASCADE,
             FOREIGN KEY (requested_by_teacher_id) REFERENCES teachers(teacher_id) ON DELETE CASCADE,
             FOREIGN KEY (reviewed_by) REFERENCES admins(admin_id) ON DELETE SET NULL
-        )`
+        )`,
+        `INSERT IGNORE INTO admins (email, full_name, password_hash, phone_number) VALUES ('admin@test.com', 'System Admin', SHA1('password123'), '98765432')`,
+        `INSERT IGNORE INTO teachers (email, full_name, password_hash, phone_number) VALUES ('teacher@test.com', 'Jane Teacher', SHA1('password123'), '91234567')`
     ];
 
     let i = 0;
