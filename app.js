@@ -362,6 +362,16 @@ app.get('/admin', checkAuthenticated, checkAdmin, (req, res) => {
     });
 });
 
+app.get('/teacher', checkAuthenticated, checkTeacher, (req, res) => {
+    res.render('teacher');
+});
+
+app.get('/student', checkAuthenticated, checkStudent, (req, res) => {
+    res.render('student');
+});
+
+// --- ADMIN SCHEDULE ROUTES ---
+
 app.get('/admin/addschedule', checkAuthenticated, checkAdmin, (req, res) => {
     db.query('SELECT teacher_id, full_name, email FROM teachers ORDER BY full_name ASC', (error, teachers) => {
         if (error) {
@@ -418,12 +428,48 @@ app.post('/admin/addschedule', checkAuthenticated, checkAdmin, (req, res) => {
     });
 });
 
-app.get('/teacher', checkAuthenticated, checkTeacher, (req, res) => {
-    res.render('teacher');
+app.get('admin/schedules', checkAuthenticated, checkAdmin, (req, res) => {
+    const sql = `SELECT ts.*, t.full_name as teacher_name
+    FROM teacher_slots ts
+    JOIN teachers t ON ts.teacher_id = t.teacher_id
+    ORDER BY slot_date, slot_time`;
+    db.query(sql, (error, slots) => {
+        if (error) {
+            req.flash('error', 'Could not load schedules.');
+            return res.redirect('/admin');
+        }
+        res.render('admin_schedules', { slots });
+    });
 });
 
-app.get('/student', checkAuthenticated, checkStudent, (req, res) => {
-    res.render('student');
+app.get('admin/schedules/:id/edit', checkAuthenticated, checkAdmin, (req, res) => {
+    const sql = `SELECT ts.*, t.full_name as teacher_name
+    FROM teacher_slots
+    JOIN teachers t ON ts.teacher_id = t.teacher_id
+    WHERE slot_id = ?
+    ORDER BY slot_date, slot_time`;
+    db.query(sql, [req.params.id], (error, slot) => {
+        if (error) {
+            req.flash('error', 'Could not load slot data.');
+            return res.redirect('/admin/schedules');
+        }
+        db.query('SELECT * FROM teachers', (error, teachers) => {
+            res.render('admin_schedule_edit', { slot, teachers });
+        });
+    });
+});
+
+app.post('admin/schedules/:id/edit', checkAuthenticated, checkAdmin, (req, res) => {
+    const slot_id = req.params.id;
+    const { teacher_id, subject, location, slot_date, slot_time } = req.body;
+    const sql = 'UPDATE teacher_slots SET teacher_id = ?, subject = ?, location = ?, slot_date = ?, slot_time = ? WHERE slot_id = ?';
+    db.query(sql, [teacher_id, subject, location, slot_date, slot_time, slot_id], (error) => {
+        if (error) {
+            req.flash('error', 'Failed to update schedule.');
+        }
+        req.flash('success', 'Slot updated successfully.');
+        res.redirect('/admin/schedules');
+    });
 });
 
 // --- TEACHER SLOTS ROUTES ---
