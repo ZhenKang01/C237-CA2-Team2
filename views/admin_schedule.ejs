@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Add schedule - TutorLink</title>
+    <link rel='stylesheet' href='/css/app.css'>
+</head>
+<body class='dashboard-page'>
+    <nav class='nav shell'>
+        <a class='brand' href='/'><span class='brand-mark'>T</span>TutorLink</a>
+        <div class='user-nav'>
+            <b class='role-pill admin-pill'>Admin</b>
+            <span><strong><%= user.full_name %></strong><small><%= user.email %></small></span>
+            <a class='button secondary' href='/admin'>Back to dashboard</a>
+            <a class='button secondary' href='/logout'>Log out</a>
+        </div>
+    </nav>
+
+    <main class='dashboard shell'>
+        <% if (errorMessages.length) { %><div class='alert error'><%= errorMessages.join(' ') %></div><% } %>
+        <% if (successMessages.length) { %><div class='alert success'><%= successMessages.join(' ') %></div><% } %>
+
+        <section class='panel'>
+            <header>
+                <h2>Create a teaching session</h2>
+                <p>Only an admin can add a schedule for a teacher.</p>
+            </header>
+
+            <form class='form-grid' method='POST' action='/admin/addschedule'>
+                <label>
+                    Teacher
+                    <select name='teacher_id' required>
+                        <option value=''>Select a teacher</option>
+                        <% teachers.forEach(teacher => { %>
+                            <option value='<%= teacher.teacher_id %>'><%= teacher.full_name %> (<%= teacher.email %>)</option>
+                        <% }) %>
+                    </select>
+                </label>
+
+                <label>
+                    Subject
+                    <input type='text' name='subject' placeholder='Mathematics' required>
+                </label>
+
+                <label>
+                    Location
+                    <input type='text' name='location' placeholder='Online / Classroom 2' required>
+                </label>
+
+                <label>
+                    Date
+                    <input type='date' name='slot_date' required>
+                </label>
+
+                <label>
+                    Time
+                    <input type='time' name='slot_time' required>
+                </label>
+
+                <div class='form-actions'>
+                    <button class='button' type='submit'>Add schedule</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

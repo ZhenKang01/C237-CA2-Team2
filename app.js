@@ -139,6 +139,28 @@ function dashboardFor(role) {
     return DASHBOARDS[role] || '/login';
 }
 
+function checkTeacherAvailability(teacherId, slotDate, slotTime, callback) {
+    const sql = `
+        SELECT slot_id
+        FROM teacher_slots
+        WHERE teacher_id = ?
+          AND slot_date = ?
+          AND slot_time = ?
+          AND is_available = 1
+        LIMIT 1
+    `;
+
+    db.query(sql, [teacherId, slotDate, slotTime], (error, results) => {
+        if (error) {
+            return callback(error);
+        }
+
+        return callback(null, results.length === 0);
+    });
+}
+
+///////// Jenita - Login and Registration Validation //////////
+
 function validateRegistration(req, res, next) {
     const full_name = (req.body.full_name || '').trim();
     const email = (req.body.email || '').trim().toLowerCase();
@@ -266,6 +288,10 @@ app.post('/login', (req, res) => {
 app.get('/dashboard', checkAuthenticated, (req, res) => {
     res.redirect(dashboardFor(req.session.user.role));
 });
+///////  Jenita - Login and Registration Validation End ///////
+
+///// Jenita - Enhancement feature /////
+//// Jenita - Enhancement feature End /////
 
 // --- PROFILE ROUTES ---
 
@@ -331,6 +357,62 @@ app.get('/admin', checkAuthenticated, checkAdmin, (req, res) => {
                 if (teachers) users = users.concat(teachers);
                 if (students) users = users.concat(students);
                 res.render('admin', { users, loadError: null });
+            });
+        });
+    });
+});
+
+app.get('/admin/addschedule', checkAuthenticated, checkAdmin, (req, res) => {
+    db.query('SELECT teacher_id, full_name, email FROM teachers ORDER BY full_name ASC', (error, teachers) => {
+        if (error) {
+            req.flash('error', 'Could not load teachers for schedule creation.');
+            return res.redirect('/admin');
+        }
+
+        return res.render('admin_schedule', { teachers });
+    });
+});
+
+app.post('/admin/addschedule', checkAuthenticated, checkAdmin, (req, res) => {
+    const { teacher_id, subject, location, slot_date, slot_time } = req.body;
+
+    if (!teacher_id || !subject || !location || !slot_date || !slot_time) {
+        req.flash('error', 'All schedule fields are required.');
+        return res.redirect('/admin/addschedule');
+    }
+
+    const teacherCheckSql = 'SELECT teacher_id, full_name FROM teachers WHERE teacher_id = ? LIMIT 1';
+    db.query(teacherCheckSql, [teacher_id], (teacherError, teacherResults) => {
+        if (teacherError) {
+            req.flash('error', 'Unable to verify teacher availability right now.');
+            return res.redirect('/admin/addschedule');
+        }
+
+        if (!teacherResults.length) {
+            req.flash('error', 'Selected teacher does not exist.');
+            return res.redirect('/admin/addschedule');
+        }
+
+        checkTeacherAvailability(teacher_id, slot_date, slot_time, (availabilityError, isAvailable) => {
+            if (availabilityError) {
+                req.flash('error', 'Could not check teacher availability.');
+                return res.redirect('/admin/addschedule');
+            }
+
+            if (!isAvailable) {
+                req.flash('error', 'This teacher is already scheduled for the selected date and time.');
+                return res.redirect('/admin/addschedule');
+            }
+
+            const insertSql = 'INSERT INTO teacher_slots (teacher_id, subject, location, slot_date, slot_time, is_available) VALUES (?, ?, ?, ?, ?, 1)';
+            db.query(insertSql, [teacher_id, subject.trim(), location.trim(), slot_date, slot_time], (insertError) => {
+                if (insertError) {
+                    req.flash('error', 'Failed to create the session schedule.');
+                    return res.redirect('/admin/addschedule');
+                }
+
+                req.flash('success', 'Schedule created successfully for ' + teacherResults[0].full_name + '.');
+                return res.redirect('/admin/addschedule');
             });
         });
     });

@@ -13,6 +13,9 @@
             <article><strong><%= users.filter(item => item.role === 'student').length %></strong><small>Students</small></article>
         </section>
         <section class='panel'><header><h2>User directory</h2><p>Registered accounts and assigned roles.</p></header>
+            <div class='form-actions' style='margin-bottom: 1rem;'>
+                <a class='button' href='/admin/addschedule'>Add schedule</a>
+            </div>
             <% if (loadError) { %><div class='empty'><%= loadError %></div>
             <% } else if (!users.length) { %><div class='empty'>No users are registered yet.</div>
             <% } else { %><div class='table-wrap'>
