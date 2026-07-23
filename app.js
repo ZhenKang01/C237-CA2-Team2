@@ -77,6 +77,7 @@ const tables = [
             class_size INT NOT NULL,
             description TEXT,
             status ENUM('pending', 'approved', 'rejected', 'cancelled') DEFAULT 'pending',
+            reject_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (slot_id) REFERENCES teacher_slots(slot_id) ON DELETE CASCADE,
             FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
