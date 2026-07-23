@@ -3,6 +3,7 @@
 <head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Student Bookings - TutorLink</title><link rel='stylesheet' href='/css/app.css'></head>
 <body class='dashboard-page'>
     <nav class='nav shell'><a class='brand' href='/'><span class='brand-mark'>T</span>TutorLink</a><div class='user-nav'><b class='role-pill teacher-pill'>Teacher</b><span><strong><%= user.full_name %></strong><small><%= user.email %></small></span><a class='button secondary' href='/dashboard'>Dashboard</a><a class='button secondary' href='/profile'>Profile</a><a class='button secondary' href='/logout'>Log out</a></div></nav>
+
     <main class='dashboard shell with-sidebar'>
         <aside class='sidebar'>
             <nav class='sidebar-nav'>
@@ -10,20 +11,23 @@
                     <span class='icon'>🏠</span>
                     Dashboard
                 </a>
+
                 <a href='/teacher/slots' class='sidebar-link'>
                     <span class='icon'>📅</span>
                     My Slots
                 </a>
+
                 <a href='/teacher/bookings' class='sidebar-link active'>
                     <span class='icon'>📋</span>
                     Student Bookings
                 </a>
             </nav>
         </aside>
+
         <div class='dashboard-content'>
             <% if (errorMessages && errorMessages.length) { %><div class='alert error'><%= errorMessages.join(' ') %></div><% } %>
             <% if (successMessages && successMessages.length) { %><div class='alert success'><%= successMessages.join(' ') %></div><% } %>
-            
+
             <header class='dashboard-header'>
                 <div>
                     <span class='eyebrow'>Approvals</span>
@@ -32,21 +36,45 @@
                 </div>
             </header>
 
+            <section class='panel' style='margin-bottom: 24px;'>
+                <form action='/teacher/bookings' method='GET' class='form'>
+                    <div class='form-group'>
+                        <label>Search Student</label>
+                        <input type='text' name='student' class='input' placeholder='Enter student name' value='<%= student %>'>
+                    </div>
+
+                    <div class='form-group'>
+                        <label>Filter Status</label>
+                        <select name='status' class='input'>
+                            <option value='' <%= status === '' ? 'selected' : '' %>>All Statuses</option>
+                            <option value='pending' <%= status === 'pending' ? 'selected' : '' %>>Pending</option>
+                            <option value='approved' <%= status === 'approved' ? 'selected' : '' %>>Approved</option>
+                            <option value='rejected' <%= status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+                            <option value='cancelled' <%= status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div style='margin-top: 16px;'>
+                        <button type='submit' class='button primary'>Search</button>
+
+                        <a href='/teacher/bookings' class='button secondary' style='margin-left: 8px;'>
+                            Clear
+                        </a>
+                    </div>
+                </form>
+            </section>
+
             <section class='panel'>
                 <% if (!bookings || !bookings.length) { %>
-                    <div class='empty'>No students have booked your slots yet.</div>
+
+                    <% if (student || status) { %>
+                        <div class='empty'>No matching student bookings were found.</div>
+                    <% } else { %>
+                        <div class='empty'>No students have booked your slots yet.</div>
+                    <% } %>
+
                 <% } else { %>
-                    <div style='margin-bottom: 20px; display: flex; gap: 10px; align-items: center;'>
-                        <input type='text' id='searchInput' placeholder='Search by student name...' class='input' style='max-width: 300px; flex: 1;'>
-                        <select id='statusFilter' class='input' style='width: auto;'>
-                            <option value='all'>All Statuses</option>
-                            <option value='pending'>Pending</option>
-                            <option value='approved'>Approved</option>
-                            <option value='rejected'>Rejected</option>
-                            <option value='cancelled'>Cancelled</option>
-                        </select>
-                        <button class='button primary' onclick='filterBookings()'>Search</button>
-                    </div>
+
                     <div class='table-wrap'>
                         <table>
                             <thead>
@@ -58,23 +86,30 @@
                                     <th>Action</th>
                                 </tr>
                             </thead>
+
                             <tbody>
                                 <% bookings.forEach(b => { %>
-                                    <tr class='booking-row' data-student='<%= b.student_name.toLowerCase() %>' data-status='<%= b.status.toLowerCase() %>'>
+                                    <tr>
                                         <td>
-                                            <b class="capitalize"><%= b.student_name %></b>
+                                            <b class='capitalize'><%= b.student_name %></b>
                                             <small><%= b.student_email %></small>
                                         </td>
+
                                         <td>
                                             <b><%= b.subject %></b>
                                             <small><%= new Date(b.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %> <%= b.slot_time %> - <%= b.end_time %></small>
                                         </td>
+
                                         <td>
                                             <b>Size: <%= b.class_size %></b>
+
                                             <% if (b.description) { %>
-                                                <small style="display: block; margin-top: 4px; color: var(--muted); font-style: italic;">"<%= b.description %>"</small>
+                                                <small style='display: block; margin-top: 4px; color: var(--muted); font-style: italic;'>
+                                                    "<%= b.description %>"
+                                                </small>
                                             <% } %>
                                         </td>
+
                                         <td>
                                             <% if (b.status === 'pending') { %>
                                                 <span style='color:#b45309;font-weight:600;'>Pending</span>
@@ -84,12 +119,14 @@
                                                 <span style='color:red;font-weight:600;'><%= b.status.charAt(0).toUpperCase() + b.status.slice(1) %></span>
                                             <% } %>
                                         </td>
+
                                         <td>
                                             <% if (b.status === 'pending') { %>
                                                 <form action='/teacher/bookings/<%= b.booking_id %>/status' method='POST' style='display:inline;'>
                                                     <input type='hidden' name='status' value='approved'>
                                                     <button type='submit' class='button primary' style='min-height:32px;padding:0 12px;font-size:13px;'>Approve</button>
                                                 </form>
+
                                                 <form action='/teacher/bookings/<%= b.booking_id %>/status' method='POST' style='display:inline;'>
                                                     <input type='hidden' name='status' value='rejected'>
                                                     <button type='submit' class='button secondary' style='min-height:32px;padding:0 12px;font-size:13px;'>Reject</button>
@@ -103,29 +140,10 @@
                             </tbody>
                         </table>
                     </div>
+
                 <% } %>
             </section>
         </div>
     </main>
-    <script>
-        function filterBookings() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const status = document.getElementById('statusFilter').value.toLowerCase();
-            const rows = document.querySelectorAll('.booking-row');
-            
-            rows.forEach(row => {
-                const rowStudent = row.dataset.student;
-                const rowStatus = row.dataset.status;
-                const matchesQuery = rowStudent.includes(query);
-                const matchesStatus = status === 'all' || rowStatus === status;
-                
-                if (matchesQuery && matchesStatus) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
-    </script>
 </body>
 </html>

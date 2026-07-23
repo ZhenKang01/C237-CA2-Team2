@@ -681,21 +681,46 @@ app.post('/teacher/slots/:id/edit', checkAuthenticated, checkTeacher, (req, res)
 // --- TEACHER BOOKING APPROVALS ---
 
 app.get('/teacher/bookings', checkAuthenticated, checkTeacher, (req, res) => {
-    const sql = `
-        SELECT b.*, ts.subject, ts.slot_date, ts.slot_time, ts.end_time, s.full_name as student_name, s.email as student_email
+
+    const student = req.query.student || '';
+    const status = req.query.status || '';
+
+    let sql = `
+        SELECT b.*, ts.subject, ts.slot_date, ts.slot_time, ts.end_time,
+               s.full_name AS student_name,
+               s.email AS student_email
         FROM bookings b
         JOIN teacher_slots ts ON b.slot_id = ts.slot_id
         JOIN students s ON b.student_id = s.student_id
         WHERE ts.teacher_id = ?
-        ORDER BY b.created_at DESC
+        AND s.full_name LIKE ?
     `;
-    db.query(sql, [req.session.user.id], (error, bookings) => {
+
+    const values = [
+        req.session.user.id,
+        '%' + student + '%'
+    ];
+
+    if (status !== '') {
+        sql += " AND b.status = ?";
+        values.push(status);
+    }
+
+    sql += " ORDER BY b.created_at DESC";
+
+    db.query(sql, values, (error, bookings) => {
         if (error) {
             req.flash('error', 'Could not load bookings.');
             return res.redirect('/teacher');
         }
-        res.render('teacher_bookings', { bookings });
+
+        res.render('teacher_bookings', {
+            bookings,
+            student,
+            status
+        });
     });
+
 });
 
 app.post('/teacher/bookings/:id/status', checkAuthenticated, checkTeacher, (req, res) => {
