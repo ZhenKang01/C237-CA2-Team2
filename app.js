@@ -699,12 +699,12 @@ app.get('/student/slots', checkAuthenticated, checkStudent, (req, res) => {
 });
 
 app.post('/student/slots/:id/book', checkAuthenticated, checkStudent, (req, res) => {
-    const { class_size } = req.body;
+    const { class_size, description } = req.body;
     const slotId = req.params.id;
     const studentId = req.session.user.id;
     
-    const sql = 'INSERT INTO bookings (slot_id, student_id, class_size, status) VALUES (?, ?, ?, "pending")';
-    db.query(sql, [slotId, studentId, class_size || 1], (error) => {
+    const sql = 'INSERT INTO bookings (slot_id, student_id, class_size, description, status) VALUES (?, ?, ?, ?, "pending")';
+    db.query(sql, [slotId, studentId, class_size || 1, description || null], (error) => {
         if (error) req.flash('error', 'Failed to book slot.');
         else req.flash('success', 'Slot booking requested! Pending teacher approval.');
         res.redirect('/student/my-bookings');
@@ -750,9 +750,9 @@ app.get('/student/bookings/:id/edit', checkAuthenticated, checkStudent, (req, re
 });
 
 app.post('/student/bookings/:id/edit', checkAuthenticated, checkStudent, (req, res) => {
-    const { class_size } = req.body;
-    const sql = 'UPDATE bookings SET class_size = ? WHERE booking_id = ? AND student_id = ? AND status = "pending"';
-    db.query(sql, [class_size, req.params.id, req.session.user.id], (error) => {
+    const { class_size, description } = req.body;
+    const sql = 'UPDATE bookings SET class_size = ?, description = ? WHERE booking_id = ? AND student_id = ? AND status = "pending"';
+    db.query(sql, [class_size, description || null, req.params.id, req.session.user.id], (error) => {
         if (error) {
             req.flash('error', 'Failed to update booking.');
             return res.redirect(`/student/bookings/${req.params.id}/edit`);

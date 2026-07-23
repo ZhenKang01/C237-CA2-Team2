@@ -36,6 +36,17 @@
                 <% if (!bookings || !bookings.length) { %>
                     <div class='empty'>No students have booked your slots yet.</div>
                 <% } else { %>
+                    <div style='margin-bottom: 20px; display: flex; gap: 10px; align-items: center;'>
+                        <input type='text' id='searchInput' placeholder='Search by student name...' class='input' style='max-width: 300px; flex: 1;'>
+                        <select id='statusFilter' class='input' style='width: auto;'>
+                            <option value='all'>All Statuses</option>
+                            <option value='pending'>Pending</option>
+                            <option value='approved'>Approved</option>
+                            <option value='rejected'>Rejected</option>
+                            <option value='cancelled'>Cancelled</option>
+                        </select>
+                        <button class='button primary' onclick='filterBookings()'>Search</button>
+                    </div>
                     <div class='table-wrap'>
                         <table>
                             <thead>
@@ -49,7 +60,7 @@
                             </thead>
                             <tbody>
                                 <% bookings.forEach(b => { %>
-                                    <tr>
+                                    <tr class='booking-row' data-student='<%= b.student_name.toLowerCase() %>' data-status='<%= b.status.toLowerCase() %>'>
                                         <td>
                                             <b><%= b.student_name %></b>
                                             <small><%= b.student_email %></small>
@@ -60,6 +71,9 @@
                                         </td>
                                         <td>
                                             <b>Size: <%= b.class_size %></b>
+                                            <% if (b.description) { %>
+                                                <small style="display: block; margin-top: 4px; color: var(--muted); font-style: italic;">"<%= b.description %>"</small>
+                                            <% } %>
                                         </td>
                                         <td>
                                             <% if (b.status === 'pending') { %>
@@ -93,5 +107,29 @@
             </section>
         </div>
     </main>
+    <script>
+        function filterBookings() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value.toLowerCase();
+            const rows = document.querySelectorAll('.booking-row');
+            
+            rows.forEach(row => {
+                const rowStudent = row.dataset.student;
+                const rowStatus = row.dataset.status;
+                const matchesQuery = rowStudent.includes(query);
+                const matchesStatus = status === 'all' || rowStatus === status;
+                
+                if (matchesQuery && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Add auto-filtering on input change
+        document.getElementById('searchInput')?.addEventListener('keyup', filterBookings);
+        document.getElementById('statusFilter')?.addEventListener('change', filterBookings);
+    </script>
 </body>
 </html>

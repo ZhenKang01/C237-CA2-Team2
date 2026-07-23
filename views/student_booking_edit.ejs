@@ -38,6 +38,10 @@
                         <label>Class Size</label>
                         <input type='number' name='class_size' class='input' value='<%= booking.class_size %>' min='1' required>
                     </div>
+                    <div class='form-group'>
+                        <label>Message / Description</label>
+                        <textarea name='description' class='input' style='min-height: 80px; resize: vertical;' placeholder='Optional message for the teacher'><%= booking.description || '' %></textarea>
+                    </div>
                     <button type='submit' class='button primary' style='width:100%'>Update Booking</button>
                 </form>
             </section>
