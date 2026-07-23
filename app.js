@@ -65,6 +65,7 @@ const tables = [
             location VARCHAR(100) NOT NULL,
             slot_date DATE NOT NULL,
             slot_time TIME NOT NULL,
+            end_time TIME NOT NULL,
             is_available TINYINT(1) DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (teacher_id) REFERENCES teachers(teacher_id) ON DELETE CASCADE
@@ -602,14 +603,29 @@ app.get('/student', checkAuthenticated, checkStudent, (req, res) => {
 // --- TEACHER SLOTS ROUTES ---
 
 app.get('/teacher/slots', checkAuthenticated, checkTeacher, (req, res) => {
-    const sql = 'SELECT * FROM teacher_slots WHERE teacher_id = ? ORDER BY slot_date, slot_time';
-    db.query(sql, [req.session.user.id], (error, slots) => {
-        if (error) {
-            req.flash('error', 'Could not load slots.');
-            return res.redirect('/teacher');
+    const subject = req.query.subject || '';
+    const location = req.query.location || '';
+    const sql = `SELECT * FROM teacher_slots WHERE teacher_id = ? AND subject LIKE ? AND location LIKE ? ORDER BY slot_date, slot_time`;
+    db.query(
+        sql,
+        [
+            req.session.user.id,
+            '%' + subject + '%',
+            '%' + location + '%'
+        ],
+        (error, slots) => {
+            if (error) {
+                req.flash('error', 'Could not load slots.');
+                return res.redirect('/teacher');
+            }
+
+            res.render('teacher_slots', {
+                slots: slots,
+                subject: subject,
+                location: location
+            });
         }
-        res.render('teacher_slots', { slots });
-    });
+    );
 });
 
 app.get('/teacher/slots/new', checkAuthenticated, checkTeacher, (req, res) => {

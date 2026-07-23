@@ -67,7 +67,7 @@
                                         </td>
                                         <td>
                                             <b><%= b.subject %></b>
-                                            <small><%= new Date(b.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %> <%= b.slot_time %></small>
+                                            <small><%= new Date(b.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %> <%= b.slot_time %> - <%= b.end_time %></small>
                                         </td>
                                         <td>
                                             <b>Size: <%= b.class_size %></b>
@@ -127,9 +127,12 @@
             });
         }
 
-        // Add auto-filtering on input change
-        document.getElementById('searchInput')?.addEventListener('keyup', filterBookings);
-        document.getElementById('statusFilter')?.addEventListener('change', filterBookings);
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+
+        if (searchInput) {searchInput.addEventListener('keyup', filterBookings);}
+
+        if (statusFilter) {statusFilter.addEventListener('change', filterBookings);}
     </script>
 </body>
 </html>
