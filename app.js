@@ -26,7 +26,7 @@ const db = mysql.createPool({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 2,
     queueLimit: 0,
     ssl: process.env.DB_SSL === 'false' ? undefined : { rejectUnauthorized: false }
 });
@@ -110,17 +110,19 @@ const tables = [
         `ALTER TABLE teacher_slots ADD COLUMN reject_reason TEXT`
     ];
 
-    let i = 0;
-    function nextTable() {
-        if (i < tables.length) {
-            db.query(tables[i], (err) => {
-                if (err) console.error('Error creating table:', err.message);
-                i++;
-                nextTable();
-            });
+    if (process.env.RUN_MIGRATIONS === 'true') {
+        let i = 0;
+        function nextTable() {
+            if (i < tables.length) {
+                db.query(tables[i], (err) => {
+                    if (err) console.error('Error creating table:', err.message);
+                    i++;
+                    nextTable();
+                });
+            }
         }
+        nextTable();
     }
-    nextTable();
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
