@@ -177,16 +177,15 @@ function checkTeacherAvailability(teacherId, slotDate, slotTime, callback) {
 
         return callback(null, results.length === 0);
     });
-
-    function isPastDate(dateInput) {
-        const d = new Date(dateInput);
-        const today = new Date();
-        d.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
-        return d < today;
-    }
 }
 
+function isPastDate(dateInput) {
+    const d = new Date(dateInput);
+    const today = new Date();
+    d.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+}
 ///////// Jenita - Login and Registration Validation //////////
 
 function validateRegistration(req, res, next) {
