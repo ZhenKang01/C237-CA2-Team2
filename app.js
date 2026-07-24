@@ -380,6 +380,69 @@ app.get('/admin', checkAuthenticated, checkAdmin, (req, res) => {
     });
 });
 
+app.get('/teacher', checkAuthenticated, checkTeacher, (req, res) => {
+    const tid = req.session.user.id;
+    const q1 = 'SELECT COUNT(*) AS total_slots FROM teacher_slots WHERE teacher_id = ?';
+    const q2 = 'SELECT COUNT(*) AS pending_bookings FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status = "pending"';
+    const q3 = 'SELECT ts.subject, ts.slot_date, ts.slot_time FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status = "approved" AND ts.slot_date >= CURDATE() ORDER BY ts.slot_date ASC, ts.slot_time ASC LIMIT 1';
+    const q4 = 'SELECT b.*, ts.subject, ts.location, ts.slot_date, ts.slot_time, s.full_name as student_name FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id JOIN students s ON b.student_id = s.student_id WHERE ts.teacher_id = ? AND b.status = "approved"';
+    
+    db.query(q1, [tid], (e1, r1) => {
+        db.query(q2, [tid], (e2, r2) => {
+            db.query(q3, [tid], (e3, r3) => {
+                db.query(q4, [tid], (e4, r4) => {
+                    const groupedBookingsMap = {};
+                    (r4 || []).forEach(b => {
+                        if (!groupedBookingsMap[b.slot_id]) {
+                            groupedBookingsMap[b.slot_id] = {
+                                slot_id: b.slot_id,
+                                subject: b.subject,
+                                location: b.location,
+                                slot_date: b.slot_date,
+                                slot_time: res.locals.formatTime(b.slot_time),
+                                students: []
+                            };
+                        }
+                        groupedBookingsMap[b.slot_id].students.push({
+                            name: b.student_name,
+                            message: b.description || 'No message provided.'
+                        });
+                    });
+                    const groupedBookings = Object.values(groupedBookingsMap);
+                    
+                    res.render('teacher', {
+                        totalSlots: r1?.[0]?.total_slots || 0,
+                        pendingBookings: r2?.[0]?.pending_bookings || 0,
+                        nextSession: r3?.[0] || null,
+                        bookings: groupedBookings
+                    });
+                });
+            });
+        });
+    });
+});
+
+app.get('/student', checkAuthenticated, checkStudent, (req, res) => {
+    const sid = req.session.user.id;
+    const q1 = 'SELECT COUNT(*) AS total_bookings FROM bookings WHERE student_id = ?';
+    const q2 = 'SELECT COUNT(*) AS pending_approvals FROM bookings WHERE student_id = ? AND status = "pending"';
+    const q3 = 'SELECT ts.slot_date, ts.slot_time FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE b.student_id = ? AND b.status = "approved" AND ts.slot_date >= CURDATE() ORDER BY ts.slot_date ASC, ts.slot_time ASC LIMIT 1';
+    
+    db.query(q1, [sid], (e1, r1) => {
+        db.query(q2, [sid], (e2, r2) => {
+            db.query(q3, [sid], (e3, r3) => {
+                res.render('student', {
+                    totalBookings: r1?.[0]?.total_bookings || 0,
+                    pendingApprovals: r2?.[0]?.pending_approvals || 0,
+                    nextSession: r3?.[0] || null
+                });
+            });
+        });
+    });
+});
+
+// --- ADMIN USER ROUTES ---
+
 app.get('/admin/users/new', checkAuthenticated, checkAdmin, (req, res) => {
     res.render('admin_user_form', { targetUser: {}, role: 'student' });
 });
@@ -478,6 +541,9 @@ app.post('/admin/users/:role/:id/delete', checkAuthenticated, checkAdmin, (req, 
         });
     });
 });
+
+// --- ADMIN SCHEDULE ROUTES ---
+
 app.get('/admin/addschedule', checkAuthenticated, checkAdmin, (req, res) => {
     db.query('SELECT teacher_id, full_name, email FROM teachers ORDER BY full_name ASC', (error, teachers) => {
         if (error) {
@@ -534,6 +600,8 @@ app.post('/admin/addschedule', checkAuthenticated, checkAdmin, (req, res) => {
     });
 });
 
+///////  Jeriel - View and Update Schedules (Admin) ///////
+
 app.get('/admin/schedules', checkAuthenticated, checkAdmin, (req, res) => {
     const sql = `SELECT ts.*, t.full_name as teacher_name
     FROM teacher_slots ts
@@ -578,73 +646,14 @@ app.post('/admin/schedules/:id/edit', checkAuthenticated, checkAdmin, (req, res)
     });
 });
 
+///////  Jeriel - View and Update Schedules (Admin) End ///////
+
 app.post('/admin/schedules/:id/delete', checkAuthenticated, checkAdmin, (req, res) => {
     const sql = 'DELETE FROM teacher_slots WHERE slot_id = ?';
     db.query(sql, [req.params.id], (error) => {
         if (error) req.flash('error', 'Failed to delete slot.');
         else req.flash('success', 'Slot deleted successfully.');
         res.redirect('/admin/schedules');
-    });
-});
-
-app.get('/teacher', checkAuthenticated, checkTeacher, (req, res) => {
-    const tid = req.session.user.id;
-    const q1 = 'SELECT COUNT(*) AS total_slots FROM teacher_slots WHERE teacher_id = ?';
-    const q2 = 'SELECT COUNT(*) AS pending_bookings FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status = "pending"';
-    const q3 = 'SELECT ts.subject, ts.slot_date, ts.slot_time FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status = "approved" AND ts.slot_date >= CURDATE() ORDER BY ts.slot_date ASC, ts.slot_time ASC LIMIT 1';
-    const q4 = 'SELECT b.*, ts.subject, ts.location, ts.slot_date, ts.slot_time, s.full_name as student_name FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id JOIN students s ON b.student_id = s.student_id WHERE ts.teacher_id = ? AND b.status = "approved"';
-    
-    db.query(q1, [tid], (e1, r1) => {
-        db.query(q2, [tid], (e2, r2) => {
-            db.query(q3, [tid], (e3, r3) => {
-                db.query(q4, [tid], (e4, r4) => {
-                    const groupedBookingsMap = {};
-                    (r4 || []).forEach(b => {
-                        if (!groupedBookingsMap[b.slot_id]) {
-                            groupedBookingsMap[b.slot_id] = {
-                                slot_id: b.slot_id,
-                                subject: b.subject,
-                                location: b.location,
-                                slot_date: b.slot_date,
-                                slot_time: res.locals.formatTime(b.slot_time),
-                                students: []
-                            };
-                        }
-                        groupedBookingsMap[b.slot_id].students.push({
-                            name: b.student_name,
-                            message: b.description || 'No message provided.'
-                        });
-                    });
-                    const groupedBookings = Object.values(groupedBookingsMap);
-                    
-                    res.render('teacher', {
-                        totalSlots: r1?.[0]?.total_slots || 0,
-                        pendingBookings: r2?.[0]?.pending_bookings || 0,
-                        nextSession: r3?.[0] || null,
-                        bookings: groupedBookings
-                    });
-                });
-            });
-        });
-    });
-});
-
-app.get('/student', checkAuthenticated, checkStudent, (req, res) => {
-    const sid = req.session.user.id;
-    const q1 = 'SELECT COUNT(*) AS total_bookings FROM bookings WHERE student_id = ?';
-    const q2 = 'SELECT COUNT(*) AS pending_approvals FROM bookings WHERE student_id = ? AND status = "pending"';
-    const q3 = 'SELECT ts.slot_date, ts.slot_time FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE b.student_id = ? AND b.status = "approved" AND ts.slot_date >= CURDATE() ORDER BY ts.slot_date ASC, ts.slot_time ASC LIMIT 1';
-    
-    db.query(q1, [sid], (e1, r1) => {
-        db.query(q2, [sid], (e2, r2) => {
-            db.query(q3, [sid], (e3, r3) => {
-                res.render('student', {
-                    totalBookings: r1?.[0]?.total_bookings || 0,
-                    pendingApprovals: r2?.[0]?.pending_approvals || 0,
-                    nextSession: r3?.[0] || null
-                });
-            });
-        });
     });
 });
 
