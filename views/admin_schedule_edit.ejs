@@ -92,6 +92,10 @@
                             <input type='time' name='end_time' class='input' value='<%= slot.end_time %>' required>
                         </div>
                     </div>
+                    <div class='form-group'>
+                        <label>Capacity (Max Students)</label>
+                        <input type='number' name='capacity' class='input' value='<%= slot.capacity || 1 %>' min='1' max='50' required>
+                    </div>
                     <button type='submit' class='button primary' style='width:100%'>Update Slot</button>
                 </form>
             </section>

@@ -31,7 +31,7 @@
                 <article>
                     <% if (nextSession) { %>
                         <strong><%= new Date(nextSession.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></strong>
-                        <small><%= nextSession.slot_time %></small>
+                        <small><%= formatTime(nextSession.slot_time) %></small>
                     <% } else { %>
                         <strong>None</strong>
                         <small>Next Session</small>

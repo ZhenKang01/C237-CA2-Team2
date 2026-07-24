@@ -58,19 +58,23 @@
                                         </td>
                                         <td>
                                             <b><%= new Date(slot.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></b>
-                                            <small><%= slot.slot_time %> - <%= slot.end_time %></small>
+                                            <small><%= formatTime(slot.slot_time) %> - <%= formatTime(slot.end_time) %></small>
                                         </td>
                                         <td>
                                             <% if (slot.my_status) { %>
                                                 <span style='color:var(--green);font-weight:600;'>Booked (<%= slot.my_status %>)</span>
                                             <% } else { %>
                                                 <form action='/student/slots/<%= slot.slot_id %>/book' method='POST' style='display:flex; flex-direction:column; gap:8px;'>
+                                                    <% const left = Math.max(0, slot.capacity - (slot.booked_slots || 0)); %>
                                                     <div style="display:flex; gap:8px; align-items:center;">
-                                                        <small>Size:</small>
-                                                        <input type='number' name='class_size' value='1' min='1' max='10' required style='width:60px; min-height:32px; padding:0 8px; font-size:13px;'>
+                                                        <small style="font-weight: 600; color: var(--muted);">Slots Left: <%= left %> / <%= slot.capacity %></small>
                                                     </div>
-                                                    <textarea name='description' placeholder='Add a message (optional)' style='min-height:40px; padding:4px 8px; font-size:13px; font-family:inherit; resize:vertical;'></textarea>
-                                                    <button type='submit' class='button primary' style='min-height:32px;padding:0 12px;font-size:13px; align-self:flex-start;'>Book Slot</button>
+                                                    <% if (left > 0) { %>
+                                                        <textarea name='description' placeholder='Add a message (optional)' style='min-height:40px; padding:4px 8px; font-size:13px; font-family:inherit; resize:vertical;'></textarea>
+                                                        <button type='submit' class='button primary' style='min-height:32px;padding:0 12px;font-size:13px; align-self:flex-start;'>Book Slot</button>
+                                                    <% } else { %>
+                                                        <span style='color:#b45309;font-weight:600;font-size:13px;'>Fully Booked</span>
+                                                    <% } %>
                                                 </form>
                                             <% } %>
                                         </td>

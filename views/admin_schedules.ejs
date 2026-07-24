@@ -79,7 +79,7 @@
                                     </td>
                                     <td>
                                         <b><%= new Date(slot.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></b>
-                                        <small><%= slot.slot_time %> - <%= slot.end_time || '--:--' %></small>
+                                        <small><%= formatTime(slot.slot_time) %> - <%= formatTime(slot.end_time) %></small>
                                     </td>
                                     <td>
                                         <% if (slot.is_available) { %>

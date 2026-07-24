@@ -70,14 +70,14 @@
                             </thead>
                             <tbody>
                                 <% slots.forEach(slot => { %>
-                                    <tr>
+                                    <tr style="cursor:pointer;" onclick="showBookings('<%= encodeURIComponent(JSON.stringify(slot.booked_students)) %>')">
                                         <td>
                                             <b><%= slot.subject %></b>
                                             <small><%= slot.location %></small>
                                         </td>
                                         <td>
                                             <b><%= new Date(slot.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %></b>
-                                            <small><%= slot.slot_time %> - <%= slot.end_time || '--:--' %></small>
+                                            <small><%= formatTime(slot.slot_time) %> - <%= formatTime(slot.end_time) || '--:--' %></small>
                                         </td>
                                         <td>
                                             <% if (slot.is_available) { %>
@@ -85,8 +85,10 @@
                                             <% } else { %>
                                                 <span style="color:var(--muted);">Unavailable</span>
                                             <% } %>
+                                            <br>
+                                            <small><%= slot.slots_left %> / <%= slot.capacity %> slots left</small>
                                         </td>
-                                        <td>
+                                        <td onclick="event.stopPropagation();">
                                             <a href='/teacher/slots/<%= slot.slot_id %>/edit' class='button secondary' style='min-height:32px;padding:0 12px;font-size:13px;'>Edit</a>
                                             <form action='/teacher/slots/<%= slot.slot_id %>/delete' method='POST' style='display:inline;' onsubmit='return confirm("Delete this slot?");'>
                                                 <button type='submit' class='button secondary' style='min-height:32px;padding:0 12px;font-size:13px;color:red;'>Delete</button>
@@ -101,5 +103,37 @@
             </section>
         </div>
     </main>
+
+    <!-- Students List Modal -->
+    <div id="students-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:24px; border-radius:8px; width:400px; max-width:90%;">
+            <h2 style="margin-top:0;">Booked Students</h2>
+            <ul id="modal-student-list" style="margin-top:16px; padding-left: 20px;">
+                <!-- Injected via JS -->
+            </ul>
+            <div style="margin-top:24px; text-align:right;">
+                <button type="button" class="button secondary" onclick="document.getElementById('students-modal').style.display = 'none';">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showBookings(studentsJson) {
+            const students = JSON.parse(decodeURIComponent(studentsJson));
+            const list = document.getElementById('modal-student-list');
+            list.innerHTML = '';
+            
+            if (!students || students.length === 0) {
+                list.innerHTML = '<li>No students have booked this slot yet.</li>';
+            } else {
+                students.forEach(s => {
+                    const statusText = s.status.charAt(0).toUpperCase() + s.status.slice(1);
+                    const color = s.status === 'approved' ? 'var(--green)' : '#b45309';
+                    list.innerHTML += `<li style="margin-bottom: 8px;"><b>${s.student_name}</b> <span style="color:${color}; font-size: 12px; font-weight: 600;">(${statusText})</span></li>`;
+                });
+            }
+            document.getElementById('students-modal').style.display = 'flex';
+        }
+    </script>
 </body>
 </html>

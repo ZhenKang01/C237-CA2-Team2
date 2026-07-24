@@ -52,7 +52,7 @@
                     
                     <script>
                         // Inject bookings from EJS to JS safely
-                        const bookings = <%- JSON.stringify(bookings) %>;
+                        const bookings = <%- JSON.stringify((bookings || []).map(b => Object.assign({}, b, { slot_time: formatTime(b.slot_time) }))) %>;
                         
                         let currentDate = new Date();
                         

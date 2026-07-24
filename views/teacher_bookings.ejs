@@ -97,11 +97,11 @@
 
                                         <td>
                                             <b><%= b.subject %></b>
-                                            <small><%= new Date(b.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %> <%= b.slot_time %> - <%= b.end_time %></small>
+                                            <small><%= new Date(b.slot_date).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' }) %> <%= formatTime(b.slot_time) %> - <%= formatTime(b.end_time) %></small>
                                         </td>
 
                                         <td>
-                                            <b>Size: <%= b.class_size %></b>
+
 
                                             <% if (b.description) { %>
                                                 <small style='display: block; margin-top: 4px; color: var(--muted); font-style: italic;'>
@@ -122,14 +122,20 @@
 
                                         <td>
                                             <% if (b.status === 'pending') { %>
-                                                <form action='/teacher/bookings/<%= b.booking_id %>/status' method='POST' style='display:inline;'>
-                                                    <input type='hidden' name='status' value='approved'>
-                                                    <button type='submit' class='button primary' style='min-height:32px;padding:0 12px;font-size:13px;'>Approve</button>
-                                                </form>
-                                                <form action='/teacher/bookings/<%= b.booking_id %>/status' method='POST' style='display:inline-flex; flex-direction:column; gap:4px; margin-top:8px;'>
+                                                <div id="actions-<%= b.booking_id %>" style="display:flex; gap: 8px;">
+                                                    <form action='/teacher/bookings/<%= b.booking_id %>/status' method='POST'>
+                                                        <input type='hidden' name='status' value='approved'>
+                                                        <button type='submit' class='button primary' style='min-height:32px;padding:0 12px;font-size:13px;'>Approve</button>
+                                                    </form>
+                                                    <button type='button' class='button secondary' style='min-height:32px;padding:0 12px;font-size:13px;' onclick="document.getElementById('reject-form-<%= b.booking_id %>').style.display='flex'; document.getElementById('actions-<%= b.booking_id %>').style.display='none';">Reject</button>
+                                                </div>
+                                                <form id="reject-form-<%= b.booking_id %>" action='/teacher/bookings/<%= b.booking_id %>/status' method='POST' style='display:none; flex-direction:column; gap:4px;'>
                                                     <input type='hidden' name='status' value='rejected'>
                                                     <input type='text' name='reject_reason' placeholder='Reason for rejection (optional)...' style='min-height:32px; padding:0 8px; font-size:13px; width: 200px;'>
-                                                    <button type='submit' class='button secondary' style='min-height:32px;padding:0 12px;font-size:13px; align-self:flex-start;'>Reject</button>
+                                                    <div style="display:flex; gap: 8px;">
+                                                        <button type='submit' class='button primary' style='min-height:32px;padding:0 12px;font-size:13px; background-color:#dc2626;'>Confirm Reject</button>
+                                                        <button type='button' class='button secondary' style='min-height:32px;padding:0 12px;font-size:13px;' onclick="document.getElementById('reject-form-<%= b.booking_id %>').style.display='none'; document.getElementById('actions-<%= b.booking_id %>').style.display='flex';">Cancel</button>
+                                                    </div>
                                                 </form>
                                             <% } else { %>
                                                 <small style='color:var(--muted);'>Reviewed</small>

@@ -134,6 +134,14 @@ app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.successMessages = req.flash('success');
     res.locals.errorMessages = req.flash('error');
+    res.locals.formatTime = (timeStr) => {
+        if (!timeStr) return '--:--';
+        const [hour, minute] = timeStr.split(':');
+        const h = parseInt(hour, 10);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${minute} ${ampm}`;
+    };
     next();
 });
 
@@ -504,8 +512,8 @@ app.post('/admin/addschedule', checkAuthenticated, checkAdmin, (req, res) => {
                 return res.redirect('/admin/addschedule');
             }
 
-            const insertSql = 'INSERT INTO teacher_slots (teacher_id, subject, location, slot_date, slot_time, end_time, is_available) VALUES (?, ?, ?, ?, ?, ?, 1)';
-            db.query(insertSql, [teacher_id, subject.trim(), location.trim(), slot_date, slot_time, end_time], (insertError) => {
+            const insertSql = 'INSERT INTO teacher_slots (teacher_id, subject, location, slot_date, slot_time, end_time, capacity, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, 1)';
+            db.query(insertSql, [teacher_id, subject.trim(), location.trim(), slot_date, slot_time, end_time, req.body.capacity || 1], (insertError) => {
                 if (insertError) {
                     req.flash('error', 'Failed to create the session schedule.');
                     return res.redirect('/admin/addschedule');
@@ -550,9 +558,9 @@ app.get('/admin/schedules/:id/edit', checkAuthenticated, checkAdmin, (req, res) 
 
 app.post('/admin/schedules/:id/edit', checkAuthenticated, checkAdmin, (req, res) => {
     const slot_id = req.params.id;
-    const { teacher_id, subject, location, slot_date, slot_time, end_time } = req.body;
-    const sql = 'UPDATE teacher_slots SET teacher_id = ?, subject = ?, location = ?, slot_date = ?, slot_time = ?, end_time = ? WHERE slot_id = ?';
-    db.query(sql, [teacher_id, subject, location, slot_date, slot_time, end_time, slot_id], (error) => {
+    const { teacher_id, subject, location, slot_date, slot_time, end_time, capacity } = req.body;
+    const sql = 'UPDATE teacher_slots SET teacher_id = ?, subject = ?, location = ?, slot_date = ?, slot_time = ?, end_time = ?, capacity = ? WHERE slot_id = ?';
+    db.query(sql, [teacher_id, subject, location, slot_date, slot_time, end_time, capacity || 1, slot_id], (error) => {
         if (error) {
             req.flash('error', 'Failed to update schedule.');
         } else {
@@ -575,15 +583,37 @@ app.get('/teacher', checkAuthenticated, checkTeacher, (req, res) => {
     const tid = req.session.user.id;
     const q1 = 'SELECT COUNT(*) AS total_slots FROM teacher_slots WHERE teacher_id = ?';
     const q2 = 'SELECT COUNT(*) AS pending_bookings FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status = "pending"';
-    const q3 = 'SELECT ts.slot_date, ts.slot_time FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status = "approved" AND ts.slot_date >= CURDATE() ORDER BY ts.slot_date ASC, ts.slot_time ASC LIMIT 1';
+    const q3 = 'SELECT ts.subject, ts.slot_date, ts.slot_time FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status = "approved" AND ts.slot_date >= CURDATE() ORDER BY ts.slot_date ASC, ts.slot_time ASC LIMIT 1';
+    const q4 = 'SELECT b.*, ts.subject, ts.slot_date, ts.slot_time, s.full_name as student_name FROM bookings b JOIN teacher_slots ts ON b.slot_id = ts.slot_id JOIN students s ON b.student_id = s.student_id WHERE ts.teacher_id = ? AND b.status = "approved"';
     
     db.query(q1, [tid], (e1, r1) => {
         db.query(q2, [tid], (e2, r2) => {
             db.query(q3, [tid], (e3, r3) => {
-                res.render('teacher', {
-                    totalSlots: r1?.[0]?.total_slots || 0,
-                    pendingBookings: r2?.[0]?.pending_bookings || 0,
-                    nextSession: r3?.[0] || null
+                db.query(q4, [tid], (e4, r4) => {
+                    const groupedBookingsMap = {};
+                    (r4 || []).forEach(b => {
+                        if (!groupedBookingsMap[b.slot_id]) {
+                            groupedBookingsMap[b.slot_id] = {
+                                slot_id: b.slot_id,
+                                subject: b.subject,
+                                slot_date: b.slot_date,
+                                slot_time: res.locals.formatTime(b.slot_time),
+                                students: []
+                            };
+                        }
+                        groupedBookingsMap[b.slot_id].students.push({
+                            name: b.student_name,
+                            message: b.description || 'No message provided.'
+                        });
+                    });
+                    const groupedBookings = Object.values(groupedBookingsMap);
+                    
+                    res.render('teacher', {
+                        totalSlots: r1?.[0]?.total_slots || 0,
+                        pendingBookings: r2?.[0]?.pending_bookings || 0,
+                        nextSession: r3?.[0] || null,
+                        bookings: groupedBookings
+                    });
                 });
             });
         });
@@ -614,37 +644,43 @@ app.get('/student', checkAuthenticated, checkStudent, (req, res) => {
 app.get('/teacher/slots', checkAuthenticated, checkTeacher, (req, res) => {
     const subject = req.query.subject || '';
     const location = req.query.location || '';
-    const sql = `SELECT * FROM teacher_slots WHERE teacher_id = ? AND subject LIKE ? AND location LIKE ? ORDER BY slot_date, slot_time`;
-    db.query(
-        sql,
-        [
-            req.session.user.id,
-            '%' + subject + '%',
-            '%' + location + '%'
-        ],
-        (error, slots) => {
-            if (error) {
-                req.flash('error', 'Could not load slots.');
-                return res.redirect('/teacher');
-            }
+    const tid = req.session.user.id;
+    
+    const sqlSlots = `SELECT * FROM teacher_slots WHERE teacher_id = ? AND subject LIKE ? AND location LIKE ? ORDER BY slot_date, slot_time`;
+    const sqlBookings = `SELECT b.slot_id, b.status, s.full_name as student_name FROM bookings b JOIN students s ON b.student_id = s.student_id JOIN teacher_slots ts ON b.slot_id = ts.slot_id WHERE ts.teacher_id = ? AND b.status IN ('approved', 'pending')`;
+    
+    db.query(sqlSlots, [tid, '%' + subject + '%', '%' + location + '%'], (error, slots) => {
+        if (error) {
+            req.flash('error', 'Could not load slots.');
+            return res.redirect('/teacher');
+        }
+
+        db.query(sqlBookings, [tid], (err2, bookings) => {
+            if (err2) bookings = [];
+
+            // Attach bookings and calculate slots left for each slot
+            slots.forEach(slot => {
+                const slotBookings = bookings.filter(b => b.slot_id === slot.slot_id);
+                slot.booked_students = slotBookings;
+                slot.slots_left = slot.capacity - slotBookings.length;
+            });
 
             res.render('teacher_slots', {
                 slots: slots,
                 subject: subject,
                 location: location
             });
-        }
-    );
+        });
+    });
 });
-
 app.get('/teacher/slots/new', checkAuthenticated, checkTeacher, (req, res) => {
     res.render('teacher_slot_form', { slot: {} });
 });
 
 app.post('/teacher/slots/new', checkAuthenticated, checkTeacher, (req, res) => {
-    const { subject, location, slot_date, slot_time, end_time } = req.body;
-    const sql = 'INSERT INTO teacher_slots (teacher_id, subject, location, slot_date, slot_time, end_time) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(sql, [req.session.user.id, subject, location, slot_date, slot_time, end_time], (error) => {
+    const { subject, location, slot_date, slot_time, end_time, capacity } = req.body;
+    const sql = 'INSERT INTO teacher_slots (teacher_id, subject, location, slot_date, slot_time, end_time, capacity) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(sql, [req.session.user.id, subject.trim(), location.trim(), slot_date, slot_time, end_time, capacity || 1], (error) => {
         if (error) {
             req.flash('error', 'Failed to create slot.');
             return res.redirect('/teacher/slots/new');
@@ -763,7 +799,8 @@ app.post('/teacher/bookings/:id/status', checkAuthenticated, checkTeacher, (req,
 app.get('/student/slots', checkAuthenticated, checkStudent, (req, res) => {
     const sql = `
         SELECT ts.*, t.full_name as teacher_name,
-               (SELECT status FROM bookings b WHERE b.slot_id = ts.slot_id AND b.student_id = ?) as my_status
+               (SELECT status FROM bookings b WHERE b.slot_id = ts.slot_id AND b.student_id = ?) as my_status,
+               (SELECT COALESCE(SUM(class_size), 0) FROM bookings b WHERE b.slot_id = ts.slot_id AND b.status IN ('pending', 'approved')) as booked_slots
         FROM teacher_slots ts
         JOIN teachers t ON ts.teacher_id = t.teacher_id
         WHERE ts.is_available = 1
@@ -779,19 +816,31 @@ app.get('/student/slots', checkAuthenticated, checkStudent, (req, res) => {
 });
 
 app.post('/student/slots/:id/book', checkAuthenticated, checkStudent, (req, res) => {
-    const { class_size, description } = req.body;
+    const { description } = req.body;
     const slotId = req.params.id;
     const studentId = req.session.user.id;
     
-    const sql = 'INSERT INTO bookings (slot_id, student_id, class_size, description, status) VALUES (?, ?, ?, ?, "pending")';
-    db.query(sql, [slotId, studentId, class_size || 1, description || null], (error) => {
-        if (error) {
-            console.error('Booking Error:', error);
-            req.flash('error', 'Failed to book slot: ' + error.message);
-        } else {
-            req.flash('success', 'Slot booking requested! Pending teacher approval.');
+    db.query('SELECT capacity, (SELECT COALESCE(SUM(class_size), 0) FROM bookings b WHERE b.slot_id = ts.slot_id AND b.status IN ("pending", "approved")) as booked_slots FROM teacher_slots ts WHERE slot_id = ?', [slotId], (err, results) => {
+        if (err || results.length === 0) {
+            req.flash('error', 'Failed to retrieve slot information.');
+            return res.redirect('/student/slots');
         }
-        res.redirect('/student/my-bookings');
+        
+        if (results[0].booked_slots >= results[0].capacity) {
+            req.flash('error', 'Sorry, this slot is fully booked.');
+            return res.redirect('/student/slots');
+        }
+
+        const sql = 'INSERT INTO bookings (slot_id, student_id, class_size, description, status) VALUES (?, ?, 1, ?, "pending")';
+        db.query(sql, [slotId, studentId, description || null], (error) => {
+            if (error) {
+                console.error('Booking Error:', error);
+                req.flash('error', 'Failed to book slot: ' + error.message);
+            } else {
+                req.flash('success', 'Slot booking requested! Pending teacher approval.');
+            }
+            res.redirect('/student/my-bookings');
+        });
     });
 });
 
